@@ -1,0 +1,96 @@
+# ===================================
+# .NET / C# / WPF Project
+# ===================================
+
+# Build artifacts
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+.idea/
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+# OS Files
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# ===================================
+# PRIVATE DATA (DO NOT COMMIT)
+# ===================================
+
+# Proxy lists and settings
+proxies.json
+settings.json
+
+# ===================================
+# EXCEPTIONS (Force Include)
+# ===================================
+
+# Keep VSCode configuration for project setup
+!.vscode/
+
+# Keep example/template files
+!proxies.example.json
+!settings.example.json
+
+# Keep project images
+!src/ProxyManager.UI/Images/
+!src/ProxyManager.UI/Images/**
+
+# ===================================
+# WORKSPACE FILES (Personal Environment)
+# ===================================
+
+# AI Assistant context files
+AGENTS.md
+CONTINUITY.md
+
+# PowerShell scripts (workspace automation)
+*.ps1
+*.psm1

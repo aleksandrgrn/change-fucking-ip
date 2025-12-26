@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyManager.Core", "ProxyManager.Core\ProxyManager.Core.csproj", "{B06C54CB-D445-4370-B079-A72827E76D77}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyManager.CLI", "ProxyManager.CLI\ProxyManager.CLI.csproj", "{A2E945C9-E815-4E85-B0BB-E1731723F4D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyManager.UI", "ProxyManager.UI\ProxyManager.UI.csproj", "{4959FD9C-CC5A-44CF-96FE-30F055915758}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B06C54CB-D445-4370-B079-A72827E76D77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B06C54CB-D445-4370-B079-A72827E76D77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B06C54CB-D445-4370-B079-A72827E76D77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B06C54CB-D445-4370-B079-A72827E76D77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2E945C9-E815-4E85-B0BB-E1731723F4D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2E945C9-E815-4E85-B0BB-E1731723F4D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2E945C9-E815-4E85-B0BB-E1731723F4D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2E945C9-E815-4E85-B0BB-E1731723F4D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4959FD9C-CC5A-44CF-96FE-30F055915758}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4959FD9C-CC5A-44CF-96FE-30F055915758}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4959FD9C-CC5A-44CF-96FE-30F055915758}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4959FD9C-CC5A-44CF-96FE-30F055915758}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

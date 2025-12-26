@@ -1,0 +1,68 @@
+# Visual Studio / .NET Core / C#
+## .NET Build Results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Project Files
+*.rsuser
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Rider
+.idea/
+*.sln.iml
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Logs
+*.log
+*.bak
+*.backup_*
+
+## IDE-specific
+.vscode/
+*.code-workspace
+
+## Test Results
+TestResults/
+[Tt]est[Rr]esults/
+*.trx
+
+## User-specific
+launchSettings.json
+
+## Build
+msbuild.log
+msbuild.*.log
+
+## Ignore generated proxies config (user-specific)
+# proxies.json
+
+## Legacy files (archived)
+_archive/
