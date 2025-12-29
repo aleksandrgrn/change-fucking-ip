@@ -16,22 +16,21 @@ namespace ProxyManager.UI
         private readonly ConfigRepository _configRepo;
         private readonly RegistryProxyService _proxyService;
         private readonly VbsConverterService _vbsConverter;
-        private readonly IpCheckService _ipCheckService;
-        private List<ProxyConfig> _allProxies = new();
-        private List<ProxyConfig> _filteredProxies = new();
+        private List<ProxyConfig> _allProxies = [];
+        private List<ProxyConfig> _filteredProxies = [];
 
         private static readonly string ConfigFileName = Path.Combine(AppContext.BaseDirectory, "proxies.json");
 
         private string? _currentAppliedProxy = null;
-        private bool _initialProxyEnabled;
-        private string? _initialProxyAddress;
-        private string? _initialProxyExceptions;
+        private readonly bool _initialProxyEnabled;
+        private readonly string? _initialProxyAddress;
+        private readonly string? _initialProxyExceptions;
 
         private readonly SettingsService _settingsService;
         private AppSettings _appSettings;
         private static readonly string SettingsFileName = Path.Combine(AppContext.BaseDirectory, "settings.json");
 
-        private System.Windows.Threading.DispatcherTimer _watchdogTimer;
+        private readonly System.Windows.Threading.DispatcherTimer _watchdogTimer;
 
         public MainWindow()
         {
@@ -40,7 +39,6 @@ namespace ProxyManager.UI
             _configRepo = new ConfigRepository(ConfigFileName);
             _proxyService = new RegistryProxyService();
             _vbsConverter = new VbsConverterService();
-            _ipCheckService = new IpCheckService();
             _settingsService = new SettingsService(SettingsFileName);
             _appSettings = _settingsService.Load();
 
@@ -193,7 +191,7 @@ namespace ProxyManager.UI
             else
             {
                 Log("Импорт отменён. Список прокси пуст.");
-                _allProxies = new List<ProxyConfig>();
+                _allProxies = [];
                 UpdateProxyList();
             }
         }
@@ -272,11 +270,13 @@ namespace ProxyManager.UI
         private void UpdateProxyList()
         {
             // Фильтруем пустые элементы (включая строки из пробелов) и сортируем
-            _filteredProxies = _allProxies
+            _filteredProxies =
+            [
+                .. _allProxies
                 .Where(p => !string.IsNullOrWhiteSpace(p.Name?.Trim()) &&
                             !string.IsNullOrWhiteSpace(p.Address?.Trim()))
                 .OrderBy(p => p.Name)
-                .ToList();
+            ];
             CmbProxies.ItemsSource = _filteredProxies;
             CmbProxies.DisplayMemberPath = "Name";
             // Не выбираем элемент по умолчанию — поле пустое, ждёт ввода
@@ -289,11 +289,13 @@ namespace ProxyManager.UI
             var selectedItem = CmbProxies.SelectedItem;
 
             // Показываем ПОЛНЫЙ список (без пустых)
-            _filteredProxies = _allProxies
+            _filteredProxies =
+            [
+                .. _allProxies
                 .Where(p => !string.IsNullOrWhiteSpace(p.Name?.Trim()) &&
                             !string.IsNullOrWhiteSpace(p.Address?.Trim()))
                 .OrderBy(p => p.Name)
-                .ToList();
+            ];
 
             // Принудительно очищаем и обновляем
             CmbProxies.ItemsSource = null;
@@ -310,8 +312,10 @@ namespace ProxyManager.UI
         private void BtnEditProxies_Click(object sender, RoutedEventArgs e)
         {
             // Открываем редактор
-            var editor = new ProxyEditorWindow(_configRepo);
-            editor.Owner = this; // Чтобы было поверх
+            var editor = new ProxyEditorWindow(_configRepo)
+            {
+                Owner = this // Чтобы было поверх
+            };
 
             bool? result = editor.ShowDialog();
 
@@ -335,9 +339,59 @@ namespace ProxyManager.UI
             }
         }
 
-        private async void BtnApply_Click(object sender, RoutedEventArgs e)
+        private void BtnApply_Click(object sender, RoutedEventArgs e)
         {
-            await ApplySelectedProxy();
+            if (CmbProxies.SelectedItem is ProxyConfig selectedProxy)
+            {
+                ApplyProxyConfig(selectedProxy);
+            }
+        }
+
+        private void ApplyProxyConfig(ProxyConfig selectedProxy)
+        {
+            try
+            {
+                // Проверка на специальное значение "direct" (для режима NAT)
+                if (string.Equals(selectedProxy.Address?.Trim(), "direct", StringComparison.OrdinalIgnoreCase))
+                {
+                    // ОТКЛЮЧАЕМ прокси
+                    _proxyService.ClearProxy();
+                    Log("Режим NAT включен (Прямое соединение).");
+
+                    _currentAppliedProxy = "direct"; // Явно запоминаем, что мы в Direct
+
+                    // Watchdog в режиме Direct не нужен
+                    _watchdogTimer.Stop();
+                }
+                else
+                {
+                    // ВКЛЮЧАЕМ прокси (стандартная логика)
+                    string addr = selectedProxy.Address ?? string.Empty;
+                    _proxyService.SetProxy(addr);
+                    Log($"Прокси установлен: {selectedProxy.Name}");
+
+                    _currentAppliedProxy = addr; // Запоминаем адрес
+
+                    // Watchdog нужен только если это реальный прокси и галочка стоит
+                    if (ChkWatchdog.IsChecked == true)
+                    {
+                        _watchdogTimer.Start();
+                        Log("Watchdog запущен.");
+                    }
+                    else
+                    {
+                        _watchdogTimer.Stop();
+                    }
+                }
+
+                // Общее сохранение и обновление UI
+                CheckCurrentProxyState();
+            }
+            catch (Exception ex)
+            {
+                Log($"Ошибка применения: {ex.Message}");
+                MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async Task ApplySelectedProxy()
@@ -356,27 +410,13 @@ namespace ProxyManager.UI
                 return;
             }
 
-            try
-            {
-                // Address уже содержит порт (http://ip:port)
-                string fullAddress = proxy.Address;
-                Log($"Применяю прокси: {proxy.Name} ({fullAddress})...");
+            ApplyProxyConfig(proxy);
 
-                // Передаем null, чтобы НЕ менять список исключений (оставляем то, что сейчас в системе)
-                _proxyService.SetProxy(fullAddress, null);
-
-                // Запоминаем текущий прокси для IpCheckService
-                _currentAppliedProxy = fullAddress;
-
-                Log("✅ УСПЕШНО: Прокси установлен в реестре.");
-
-                // Автопроверка IP после смены
-                await CheckIpAsync();
-            }
-            catch (Exception ex)
-            {
-                Log($"❌ ОШИБКА: {ex.Message}");
-            }
+            // Если нужно - можно подождать завершения CheckIpAsync, но ApplyProxyConfig запускает его "fire-and-forget" через CheckCurrentProxyState
+            // Но в ApplySelectedProxy мы раньше ждали. 
+            // Однако новый CheckCurrentProxyState теперь void и сам запускает всё.
+            // Поэтому Task ApplySelectedProxy может просто завершиться.
+            await Task.CompletedTask;
         }
 
         private async void BtnReset_Click(object sender, RoutedEventArgs e)
@@ -431,7 +471,7 @@ namespace ProxyManager.UI
                     {
                         Log("Отключаю прокси (По умолчанию: Direct)...");
                         _proxyService.DisableProxy();
-                        _currentAppliedProxy = null;
+                        _currentAppliedProxy = "direct"; // Явно указываем прямой режим для HttpClient
                         Log("✅ Прокси отключен.");
                     }
                     else if (!string.IsNullOrEmpty(_appSettings.DefaultProxyAddress))
@@ -452,7 +492,7 @@ namespace ProxyManager.UI
                     // Fallback: Если пользователь отказался сохранять, просто вырубаем прокси (Direct)
                     Log("Сброс на прямое соединение...");
                     _proxyService.DisableProxy();
-                    _currentAppliedProxy = null;
+                    _currentAppliedProxy = "direct"; // Явно указываем прямой режим для HttpClient
                     Log("✅ Прокси отключен.");
                 }
 
@@ -473,6 +513,51 @@ namespace ProxyManager.UI
                 _appSettings = new AppSettings(); // сброс в дефолт (Configured=false)
                 _settingsService.Save(_appSettings);
                 Log("ℹ️ Настройки 'Прокси по умолчанию' очищены.");
+            }
+        }
+
+        private async void CheckCurrentProxyState()
+        {
+            Log("Ожидание применения настроек сети...");
+            // Даем системе 1 секунду на применение настроек прокси в реестре
+            await System.Threading.Tasks.Task.Delay(1000);
+
+            Log("Проверка IP-адреса...");
+            try
+            {
+                // Передаем текущий прокси (или "direct") явно, чтобы избежать кэширования
+                var info = await IpCheckService.GetIpInfoAsync(_currentAppliedProxy);
+                UpdateIpUi(info);
+            }
+            catch (Exception ex)
+            {
+                Log($"Ошибка проверки IP: {ex.Message}");
+                TxtIp.Text = "Ошибка";
+            }
+        }
+
+        private async void UpdateIpUi(IpInfo? info)
+        {
+            if (info != null)
+            {
+                TxtIp.Text = info.Ip;
+                TxtLocation.Text = info.Location;
+                Log($"✅ IP: {info.Ip} | {info.Location}");
+
+                try
+                {
+                    var host = await IpCheckService.GetHostnameAsync(info.Ip);
+                    TxtHostname.Text = host;
+                }
+                catch
+                {
+                    TxtHostname.Text = "-";
+                }
+            }
+            else
+            {
+                TxtIp.Text = "Ошибка";
+                Log("❌ Не удалось получить информацию об IP (прокси недоступен?).");
             }
         }
 
@@ -497,7 +582,7 @@ namespace ProxyManager.UI
                 // 1. Пробуем через текущий (или заданный) прокси
                 try
                 {
-                    info = await _ipCheckService.GetIpInfoAsync(_currentAppliedProxy);
+                    info = await IpCheckService.GetIpInfoAsync(_currentAppliedProxy);
                 }
                 catch (Exception ex)
                 {
@@ -510,7 +595,7 @@ namespace ProxyManager.UI
                     TxtLocation.Text = info.Location;
 
                     // Запрос Hostname
-                    var host = await _ipCheckService.GetHostnameAsync(info.Ip);
+                    var host = await IpCheckService.GetHostnameAsync(info.Ip);
                     TxtHostname.Text = host;
 
                     Log($"✅ IP: {info.Ip} | {info.Location}");
@@ -536,7 +621,7 @@ namespace ProxyManager.UI
             // Автопрокрутка к последней записи
             if (ListLog.Items.Count > 0)
             {
-                ListLog.ScrollIntoView(ListLog.Items[ListLog.Items.Count - 1]);
+                ListLog.ScrollIntoView(ListLog.Items[^1]);
             }
         }
     }
