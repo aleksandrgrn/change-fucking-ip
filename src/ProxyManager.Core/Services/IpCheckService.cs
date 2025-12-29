@@ -6,20 +6,30 @@ namespace ProxyManager.Core.Services
 {
     public class IpCheckService
     {
-        public async Task<IpInfo?> GetIpInfoAsync(string? proxyAddress = null)
+        public static async Task<IpInfo?> GetIpInfoAsync(string? proxyAddress = null)
         {
             try
             {
-                var handler = new HttpClientHandler();
+                using var handler = new HttpClientHandler();
 
                 if (!string.IsNullOrEmpty(proxyAddress))
                 {
-                    var proxy = new WebProxy(proxyAddress);
-                    // Важно: явно задаем дефолтные креды для самого прокси, как в старой версии
-                    proxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+                    if (string.Equals(proxyAddress, "direct", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Явное отключение прокси для HttpClient
+                        handler.UseProxy = false;
+                    }
+                    else
+                    {
+                        var proxy = new WebProxy(proxyAddress)
+                        {
+                            // Важно: явно задаем дефолтные креды для самого прокси, как в старой версии
+                            Credentials = CredentialCache.DefaultNetworkCredentials
+                        };
 
-                    handler.Proxy = proxy;
-                    handler.UseProxy = true;
+                        handler.Proxy = proxy;
+                        handler.UseProxy = true;
+                    }
                 }
 
                 // Используем дефолтные учетные данные (для корп. прокси)
@@ -39,7 +49,7 @@ namespace ProxyManager.Core.Services
             }
         }
 
-        public async Task<string> GetHostnameAsync(string? ip)
+        public static async Task<string> GetHostnameAsync(string? ip)
         {
             if (string.IsNullOrWhiteSpace(ip)) return "-";
 

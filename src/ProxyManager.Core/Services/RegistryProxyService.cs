@@ -50,6 +50,8 @@ namespace ProxyManager.Core.Services
             RefreshSystemSettings();
         }
 
+        public void ClearProxy() => DisableProxy();
+
         public string? GetCurrentProxyAddress()
         {
             using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, false);
@@ -71,7 +73,7 @@ namespace ProxyManager.Core.Services
             return key?.GetValue("ProxyOverride")?.ToString();
         }
 
-        private void RefreshSystemSettings()
+        private static void RefreshSystemSettings()
         {
             // Уведомляем систему, что настройки изменились
             InternetSetOption(IntPtr.Zero, INTERNET_OPTION_SETTINGS_CHANGED, IntPtr.Zero, 0);
